@@ -1,11 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from backend import crud, models, database
+import crud, models, database
 
-# Criação das tabelas, caso não existam
-models.Base.metadata.create_all(bind=database.engine)
-
-# Inicialização do aplicativo FastAPI
 app = FastAPI()
 
 # Dependência para obter a sessão do banco de dados
@@ -16,7 +12,26 @@ def get_db():
     finally:
         db.close()
 
-# Endpoint para criar um novo produto
+#EndPoint Criar Produtos
 @app.post("/produtos/")
-def criar_produto(nome_produto: str, metrica: str, quantidade_total: int, valor_total: float, valor_unitario: float, margem_lucro: float, valor_venda_un: float, aliquota_imposto: float, valor_imposto: float, valor_total_com_imposto: float, db: Session = Depends(get_db)):
-    return crud.criar_produto(db, nome_produto, metrica, quantidade_total, valor_total, valor_unitario, margem_lucro, valor_venda_un, aliquota_imposto, valor_imposto, valor_total_com_imposto)
+def criar_produto(nome_produto: str, metrica: str, quantidade_total: int, valor_total: float, margem_lucro: float = 0.0, aliquota_imposto: float = 0.0, gastos_fixos: float = 0.0, db: Session = Depends(get_db)):
+    return crud.criar_produto(db, nome_produto, metrica, quantidade_total, valor_total, margem_lucro, aliquota_imposto, gastos_fixos)
+
+#EndPoint Listar Produtos
+@app.get("/produtos/")
+def listar_produtos(db: Session = Depends(get_db)):
+    produtos = crud.listar_produtos(db)
+    return produtos
+
+#EndPoint Calculo Custo
+@app.post("/calculos/")
+def calcular_custos(
+        produto_id: int,
+        quantidade: int,
+        db: Session = Depends(get_db)
+):
+    return crud.calcular_custos(db, produto_id, quantidade)
+
+
+
+

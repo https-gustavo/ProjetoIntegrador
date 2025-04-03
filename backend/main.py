@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-import crud, models, database
+import crud, models, database, schemas
 
 app = FastAPI()
 
@@ -12,26 +12,34 @@ def get_db():
     finally:
         db.close()
 
-#EndPoint Criar Produtos
-@app.post("/produtos/")
-def criar_produto(nome_produto: str, metrica: str, quantidade_total: int, valor_total: float, margem_lucro: float = 0.0, aliquota_imposto: float = 0.0, gastos_fixos: float = 0.0, db: Session = Depends(get_db)):
-    return crud.criar_produto(db, nome_produto, metrica, quantidade_total, valor_total, margem_lucro, aliquota_imposto, gastos_fixos)
+# Criar Produto
+@app.post("/produtos/", response_model=schemas.Produto)
+def criar_produto(produto: schemas.ProdutoCreate, db: Session = Depends(get_db)):
+    return crud.criar_produto(db, produto)
 
-#EndPoint Listar Produtos
-@app.get("/produtos/")
+# Listar Produtos
+@app.get("/produtos/", response_model=list[schemas.Produto])
 def listar_produtos(db: Session = Depends(get_db)):
-    produtos = crud.listar_produtos(db)
-    return produtos
+    return crud.listar_produtos(db)
 
-#EndPoint Calculo Custo
-@app.post("/calculos/")
-def calcular_custos(
-        produto_id: int,
-        quantidade: int,
-        db: Session = Depends(get_db)
-):
+# Calcular Custos
+@app.post("/calculos/", response_model=schemas.CalculoCustoResponse)
+def calcular_custos(produto_id: int, quantidade: int, db: Session = Depends(get_db)):
     return crud.calcular_custos(db, produto_id, quantidade)
 
 
+# Atualizar Produto
+@app.put("/produtos/{produto_id}", response_model=schemas.Produto)
+def atualizar_produto(produto_id: int, produto_update: schemas.ProdutoUpdate, db: Session = Depends(get_db)):
+    produto = crud.atualizar_produto(db, produto_id, produto_update)
+    if produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return produto
 
-
+# Deletar Produto
+@app.delete("/produtos/{produto_id}", response_model=schemas.DeleteResponse)
+def deletar_produto(produto_id: int, db: Session = Depends(get_db)):
+    produto = crud.delete_produto(db, produto_id)
+    if produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    return {"message": "Produto deletado com sucesso"}

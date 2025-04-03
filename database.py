@@ -2,14 +2,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# String de conexão com o banco de dados PostgreSQL
+# URL de conexão com o banco de dados
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:teste@localhost:8280/calculadora_custos"
 
-# Criação do engine para conexão com o banco de dados
+# Criar motor de conexão
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-# Sessão de banco de dados
+# Criar sessão do banco de dados
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base das tabelas
+# Base dos modelos
 Base = declarative_base()
+
+# Criar tabelas no banco de dados
+def criar_tabelas():
+    Base.metadata.create_all(bind=engine)
+
+criar_tabelas()

@@ -18,3 +18,10 @@ class Produto(Base):
     valor_imposto = Column(Float, nullable=False, default=0.0)
     valor_total_com_imposto = Column(Float, nullable=False, default=0.0)
     gastos_fixos = Column(Float, default=0.0)
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    senha = Column(String, nullable=False)

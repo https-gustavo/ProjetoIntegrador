@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://gustavo.github.io/ProjetoIntegrador",
+  "homepage": "https://https-gustavo.github.io/ProjetoIntegrador",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

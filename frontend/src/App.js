@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ListaProdutos from './ListaProdutos';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://postgres-production-c3cb.up.railway.app';
 
 // --- Estilos compartilhados ---
 const styles = {

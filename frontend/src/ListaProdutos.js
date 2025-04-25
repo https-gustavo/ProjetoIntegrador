@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://postgres-production-c3cb.up.railway.app';
 
 function ListaProdutos({ produtos, onEditar, onNovoProduto, atualizarProdutos }) {
   const [termoBusca, setTermoBusca] = useState('');

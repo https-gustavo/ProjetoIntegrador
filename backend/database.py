@@ -1,9 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
 
-# URL de conexão com o banco de dados na Railway
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:FGuJhYAVyAtiugBcayNwSqejXyjbjMUv@switchback.proxy.rlwy.net:59685/railway"
+# Carregar variáveis do arquivo .env
+load_dotenv()
+
+# URL de conexão com o banco de dados
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Criar conexão
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

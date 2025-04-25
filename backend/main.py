@@ -18,7 +18,7 @@ from schemas import (
 )
 
 # Configuração do banco PostgreSQL
-DATABASE_URL = "postgresql://postgres:teste@localhost:8280/calculadora_custos"
+DATABASE_URL = "postgresql://postgres:FGuJhYAVyAtiugBcayNwSqejXyjbjMUv@switchback.proxy.rlwy.net:59685/railway"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

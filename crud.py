@@ -1,5 +1,12 @@
 from sqlalchemy.orm import Session
-import models, schemas
+from models import Produto, Usuario
+from passlib.context import CryptContext
+from sqlalchemy.exc import IntegrityError
+import schemas
+
+# Inicializando o contexto de criptografia com bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 # Criar Produto
 def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
@@ -12,9 +19,8 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     valor_total_com_imposto = produto_data.valor_total + valor_imposto
     valor_venda_un = valor_unitario + (valor_unitario * (produto_data.margem_lucro / 100))
 
-    produto = models.Produto(
+    produto = Produto(
         nome_produto=produto_data.nome_produto,
-        metrica=produto_data.metrica,
         quantidade_total=produto_data.quantidade_total,
         valor_total=produto_data.valor_total,
         valor_unitario=valor_unitario,
@@ -23,7 +29,9 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         aliquota_imposto=produto_data.aliquota_imposto,
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
-        gastos_fixos=produto_data.gastos_fixos
+        gastos_fixos=produto_data.gastos_fixos,
+        codigo_barras=produto_data.codigo_barras,
+        usuario_id=produto_data.usuario_id  # agora vem direto do schema
     )
     
     db.add(produto)
@@ -31,13 +39,15 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     db.refresh(produto)
     return produto
 
-# Listar Produtos
-def listar_produtos(db: Session):
-    return db.query(models.Produto).order_by(models.Produto.nome_produto.asc()).all()
+
+# Listar Produtos por Usuário
+def listar_produtos(db: Session, usuario_id: int):
+    return db.query(Produto).filter(Produto.usuario_id == usuario_id).order_by(Produto.nome_produto.asc()).all()
+
 
 # Calcular Custos
 def calcular_custos(db: Session, produto_id: int, quantidade: int):
-    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    produto = db.query(Produto).filter(Produto.id == produto_id).first()
     if produto:
         custo_total = produto.valor_unitario * quantidade
         lucro = custo_total * (produto.margem_lucro / 100)
@@ -53,25 +63,80 @@ def calcular_custos(db: Session, produto_id: int, quantidade: int):
         }
     return {"erro": "Produto não encontrado"}
 
+
 # Atualizar Produto
-def update_produto(db: Session, produto_id: int, produto_update: schemas.ProdutoUpdate):
-    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+def update_produto(db: Session, produto_id: int, produto_data: schemas.ProdutoUpdate):
+    produto = db.query(Produto).filter(Produto.id == produto_id).first()
     if not produto:
         return None
 
-    for key, value in produto_update.dict(exclude_unset=True).items():
-        setattr(produto, key, value)
+    # Atualização de campos opcionais
+    if produto_data.nome_produto is not None:
+        produto.nome_produto = produto_data.nome_produto
+    if produto_data.quantidade_total is not None:
+        produto.quantidade_total = produto_data.quantidade_total
+    if produto_data.valor_total is not None:
+        produto.valor_total = produto_data.valor_total
+    if produto_data.margem_lucro is not None:
+        produto.margem_lucro = produto_data.margem_lucro
+    if produto_data.aliquota_imposto is not None:
+        produto.aliquota_imposto = produto_data.aliquota_imposto
+    if produto_data.gastos_fixos is not None:
+        produto.gastos_fixos = produto_data.gastos_fixos
+    if produto_data.codigo_barras is not None:
+        produto.codigo_barras = produto_data.codigo_barras
+
+    # Recalcula os campos derivados
+    if produto.quantidade_total > 0:
+        valor_unitario = produto.valor_total / produto.quantidade_total
+    else:
+        valor_unitario = 0.0
+
+    valor_imposto = produto.valor_total * (produto.aliquota_imposto / 100)
+    valor_total_com_imposto = produto.valor_total + valor_imposto
+    valor_venda_un = valor_unitario + (valor_unitario * (produto.margem_lucro / 100))
+
+    produto.valor_unitario = valor_unitario
+    produto.valor_imposto = valor_imposto
+    produto.valor_total_com_imposto = valor_total_com_imposto
+    produto.valor_venda_un = valor_venda_un
 
     db.commit()
     db.refresh(produto)
     return produto
 
+
 # Deletar Produto
 def delete_produto(db: Session, produto_id: int):
-    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    produto = db.query(Produto).filter(Produto.id == produto_id).first()
     if not produto:
         return None
-
     db.delete(produto)
     db.commit()
     return produto
+
+
+# Criar Usuário
+def criar_usuario(db: Session, usuario: schemas.UsuarioCreate):
+    hashed_password = pwd_context.hash(usuario.senha)
+    db_usuario = Usuario(email=usuario.email, senha=hashed_password)
+    
+    try:
+        db.add(db_usuario)
+        db.commit()
+        db.refresh(db_usuario)
+        return db_usuario
+    except IntegrityError:
+        db.rollback()
+        raise ValueError("Este email já está em uso.")
+
+
+# Autenticar Usuário
+def autenticar_usuario(db: Session, usuario: schemas.UsuarioLogin):
+    db_usuario = db.query(Usuario).filter(Usuario.email == usuario.email).first()
+    if db_usuario and pwd_context.verify(usuario.senha, db_usuario.senha):
+        return db_usuario
+    return None
+
+def get_produtos_por_usuario(db: Session, usuario_id: int):
+    return db.query(models.Produto).filter(models.Produto.usuario_id == usuario_id).all()

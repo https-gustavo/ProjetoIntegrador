@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 import database
 
 Base = database.Base
@@ -8,7 +9,6 @@ class Produto(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nome_produto = Column(String, index=True, nullable=False)
-    metrica = Column(String, nullable=False)
     quantidade_total = Column(Integer, nullable=False)
     valor_total = Column(Float, nullable=False)
     valor_unitario = Column(Float, nullable=False, default=0.0)
@@ -18,3 +18,17 @@ class Produto(Base):
     valor_imposto = Column(Float, nullable=False, default=0.0)
     valor_total_com_imposto = Column(Float, nullable=False, default=0.0)
     gastos_fixos = Column(Float, default=0.0)
+    codigo_barras = Column(String(13), unique=True, index=True)
+
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    usuario = relationship("Usuario", back_populates="produtos")
+
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    senha = Column(String, nullable=False)
+
+    produtos = relationship("Produto", back_populates="usuario", cascade="all, delete")

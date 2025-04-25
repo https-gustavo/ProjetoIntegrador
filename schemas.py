@@ -1,52 +1,56 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
-# Esquema para Criar Produto
+# --- Usuário ---
+class UsuarioCreate(BaseModel):
+    email: str
+    senha: str
+
+class UsuarioLogin(BaseModel):
+    email: str
+    senha: str
+
+class UsuarioLoginResponse(BaseModel):
+    id: int
+    email: str
+
+    class Config:
+        orm_mode = True
+
+# --- Produto ---
 class ProdutoCreate(BaseModel):
     nome_produto: str
-    metrica: str
     quantidade_total: int
     valor_total: float
     margem_lucro: Optional[float] = 0.0
     aliquota_imposto: Optional[float] = 0.0
     gastos_fixos: Optional[float] = 0.0
+    codigo_barras: str
+    # usuario_id removido!
 
-# Esquema para Atualizar Produto
 class ProdutoUpdate(BaseModel):
     nome_produto: Optional[str] = None
-    metrica: Optional[str] = None
     quantidade_total: Optional[int] = None
     valor_total: Optional[float] = None
     margem_lucro: Optional[float] = None
     aliquota_imposto: Optional[float] = None
     gastos_fixos: Optional[float] = None
+    codigo_barras: Optional[str] = None
 
-# Esquema para Retorno de Produto
-class Produto(ProdutoCreate):
+class ProdutoOut(BaseModel):
     id: int
+    nome_produto: str
+    quantidade_total: int
+    valor_total: float
     valor_unitario: float
+    margem_lucro: float
     valor_venda_un: float
+    aliquota_imposto: float
     valor_imposto: float
     valor_total_com_imposto: float
+    gastos_fixos: float
+    codigo_barras: str
+    usuario_id: int
 
     class Config:
-        from_attributes = True  # Correção para Pydantic V2
-
-# Esquema para Retorno do Cálculo de Custos
-class CalculoCustoResponse(BaseModel):
-    produto: str
-    quantidade: int
-    custo_total: float
-    lucro: float
-    imposto: float
-    custo_com_imposto: float
-
-    class Config:
-        from_attributes = True  # Correção para Pydantic V2
-
-# Esquema para Retorno ao Deletar um Produto
-class DeleteResponse(BaseModel):
-    message: str
-
-    class Config:
-        from_attributes = True  # Correção para Pydantic V2
+        orm_mode = True

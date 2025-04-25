@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 # URL de conexão com o banco de dados
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:teste@localhost:8280/calculadora_custos"
 
-# Criar motor de conexão
+# Criar conexão
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # Criar sessão do banco de dados

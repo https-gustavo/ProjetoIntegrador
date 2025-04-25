@@ -5,7 +5,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copia os arquivos da subpasta `backend`
-COPY COPY backend/ /app/
+COPY backend/ /app/
 
 
 # Instala dependências

@@ -1,3 +1,5 @@
+# Forçar Railway a ler este arquivo
+
 [phases.setup]
 packages = ["python3", "gcc"]
 

@@ -15,7 +15,7 @@ class UsuarioLoginResponse(BaseModel):
     email: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Produto ---
 class ProdutoCreate(BaseModel):
@@ -26,7 +26,7 @@ class ProdutoCreate(BaseModel):
     aliquota_imposto: Optional[float] = 0.0
     gastos_fixos: Optional[float] = 0.0
     codigo_barras: str
-    # usuario_id removido!
+    # usuario_id removido corretamente
 
 class ProdutoUpdate(BaseModel):
     nome_produto: Optional[str] = None
@@ -53,4 +53,4 @@ class ProdutoOut(BaseModel):
     usuario_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

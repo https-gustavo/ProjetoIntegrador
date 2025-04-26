@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-const API_URL = 'https://postgres-production-c3cb.up.railway.app';
+const API_URL = 'https://projetointegrador-production-d445.up.railway.app';
+
 
 function ListaProdutos({ produtos, onEditar, onNovoProduto, atualizarProdutos }) {
   const [termoBusca, setTermoBusca] = useState('');

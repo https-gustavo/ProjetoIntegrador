@@ -10,11 +10,6 @@ from jose import JWTError, jwt
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # Carrega o .env
-
-# Verifique se a variável de ambiente foi carregada corretamente
-print(os.getenv("DATABASE_URL"))
-
 from backend.schemas import (
     UsuarioCreate,
     UsuarioLogin,
@@ -24,9 +19,16 @@ from backend.schemas import (
     ProdutoOut,
 )
 
+# Carrega variáveis de ambiente
+load_dotenv()
+print("Conexão com banco:", os.getenv("DATABASE_URL"))  # Apenas para debug
+
 # Configuração do banco PostgreSQL
-DATABASE_URL = "postgresql://postgres:FGuJhYAVyAtiugBcayNwSqejXyjbjMUv@switchback.proxy.rlwy.net:59685/railway"
-engine = create_engine(DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+if not SQLALCHEMY_DATABASE_URL:
+    raise RuntimeError("DATABASE_URL não configurada corretamente no .env")
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -55,16 +57,19 @@ class ProdutoDB(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario = relationship("Usuario", back_populates="produtos")
 
+# Cria as tabelas no banco
 Base.metadata.create_all(bind=engine)
 
-# Segurança de senhas
+# Segurança de senha
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-def hash_password(s: str) -> str:
-    return pwd_context.hash(s)
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
 
-# Configuração JWT
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+# Configurações do JWT
 SECRET_KEY = "cce12b0244a74f4ba148c1b0d55e128d69e157cb6fbd4373877d0e0609d2fd18"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -76,7 +81,7 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_token(token: str):
-    exc = HTTPException(
+    credentials_exception = HTTPException(
         status_code=401,
         detail="Token inválido ou expirado",
         headers={"WWW-Authenticate": "Bearer"},
@@ -85,10 +90,10 @@ def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         sub = payload.get("sub")
         if sub is None:
-            raise exc
+            raise credentials_exception
         return sub
     except JWTError:
-        raise exc
+        raise credentials_exception
 
 # Dependências FastAPI
 bearer = HTTPBearer()
@@ -108,13 +113,13 @@ def get_current_user(
     email = verify_token(token)
     user = db.query(Usuario).filter(Usuario.email == email).first()
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return user
 
-# Instância FastAPI e CORS (com persistAuthorization)
-app = FastAPI(
-    swagger_ui_parameters={"persistAuthorization": True}
-)
+# Instância FastAPI
+app = FastAPI(swagger_ui_parameters={"persistAuthorization": True})
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -123,38 +128,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Endpoints de Usuário
+# Endpoints
 @app.post("/usuarios", response_model=UsuarioLoginResponse, status_code=201)
 def criar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     if db.query(Usuario).filter(Usuario.email == usuario.email).first():
-        raise HTTPException(400, "Email já cadastrado")
-    novo = Usuario(email=usuario.email, senha=hash_password(usuario.senha))
-    db.add(novo)
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    novo_usuario = Usuario(email=usuario.email, senha=hash_password(usuario.senha))
+    db.add(novo_usuario)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_usuario)
+    return novo_usuario
 
 @app.post("/login")
 def login(usuario: UsuarioLogin, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.email == usuario.email).first()
     if not user or not verify_password(usuario.senha, user.senha):
-        raise HTTPException(401, "Email ou senha inválidos")
+        raise HTTPException(status_code=401, detail="Email ou senha inválidos")
     token = create_access_token(data={"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-# Endpoints de Produtos
 @app.post("/produtos", response_model=ProdutoOut, status_code=201)
-def criar_produto(
-    prod: ProdutoCreate,
-    db: Session = Depends(get_db),
-    user: Usuario = Depends(get_current_user)
-):
+def criar_produto(prod: ProdutoCreate, db: Session = Depends(get_db), user: Usuario = Depends(get_current_user)):
     unit = prod.valor_total / prod.quantidade_total if prod.quantidade_total > 0 else 0.0
     imp = prod.valor_total * (prod.aliquota_imposto / 100)
     total_imp = prod.valor_total + imp
     venda_unit = unit + (unit * (prod.margem_lucro / 100))
 
-    novo = ProdutoDB(
+    novo_produto = ProdutoDB(
         nome_produto=prod.nome_produto,
         quantidade_total=prod.quantidade_total,
         valor_total=prod.valor_total,
@@ -168,16 +168,13 @@ def criar_produto(
         codigo_barras=prod.codigo_barras,
         usuario_id=user.id
     )
-    db.add(novo)
+    db.add(novo_produto)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_produto)
+    return novo_produto
 
 @app.get("/produtos", response_model=List[ProdutoOut])
-def listar_produtos(
-    db: Session = Depends(get_db),
-    user: Usuario = Depends(get_current_user)
-):
+def listar_produtos(db: Session = Depends(get_db), user: Usuario = Depends(get_current_user)):
     return db.query(ProdutoDB).filter(ProdutoDB.usuario_id == user.id).all()
 
 @app.put("/produtos/{produto_id}", response_model=ProdutoOut)
@@ -187,29 +184,27 @@ def atualizar_produto(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user)
 ):
-    p = db.query(ProdutoDB).get(produto_id)
-    if not p or p.usuario_id != user.id:
-        raise HTTPException(403, "Acesso negado ou produto não existe")
-    for attr in ["nome_produto","quantidade_total","valor_total","margem_lucro",
-                 "aliquota_imposto","gastos_fixos","codigo_barras"]:
-        setattr(p, attr, getattr(prod, attr))
-    p.valor_unitario = p.valor_total / p.quantidade_total if p.quantidade_total > 0 else 0.0
-    imp = p.valor_total * (p.aliquota_imposto / 100)
-    p.valor_imposto = imp
-    p.valor_total_com_imposto = p.valor_total + imp
-    p.valor_venda_un = p.valor_unitario + (p.valor_unitario * (p.margem_lucro / 100))
+    produto = db.query(ProdutoDB).get(produto_id)
+    if not produto or produto.usuario_id != user.id:
+        raise HTTPException(status_code=403, detail="Acesso negado ou produto não existe")
+
+    for attr in ["nome_produto", "quantidade_total", "valor_total", "margem_lucro", "aliquota_imposto", "gastos_fixos", "codigo_barras"]:
+        setattr(produto, attr, getattr(prod, attr))
+
+    produto.valor_unitario = produto.valor_total / produto.quantidade_total if produto.quantidade_total > 0 else 0.0
+    imp = produto.valor_total * (produto.aliquota_imposto / 100)
+    produto.valor_imposto = imp
+    produto.valor_total_com_imposto = produto.valor_total + imp
+    produto.valor_venda_un = produto.valor_unitario + (produto.valor_unitario * (produto.margem_lucro / 100))
+
     db.commit()
-    db.refresh(p)
-    return p
+    db.refresh(produto)
+    return produto
 
 @app.delete("/produtos/{produto_id}", status_code=204)
-def deletar_produto(
-    produto_id: int,
-    db: Session = Depends(get_db),
-    user: Usuario = Depends(get_current_user)
-):
-    p = db.query(ProdutoDB).get(produto_id)
-    if not p or p.usuario_id != user.id:
-        raise HTTPException(403, "Acesso negado ou produto não existe")
-    db.delete(p)
+def deletar_produto(produto_id: int, db: Session = Depends(get_db), user: Usuario = Depends(get_current_user)):
+    produto = db.query(ProdutoDB).get(produto_id)
+    if not produto or produto.usuario_id != user.id:
+        raise HTTPException(status_code=403, detail="Acesso negado ou produto não existe")
+    db.delete(produto)
     db.commit()

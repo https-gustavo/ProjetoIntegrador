@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/ProjetoIntegrador/static/js/main.06cc28fd.js",
-    "index.html": "/ProjetoIntegrador/index.html",
-    "main.06cc28fd.js.map": "/ProjetoIntegrador/static/js/main.06cc28fd.js.map"
+    "main.js": "./static/js/main.5e980880.js",
+    "index.html": "./index.html",
+    "main.5e980880.js.map": "./static/js/main.5e980880.js.map"
   },
   "entrypoints": [
-    "static/js/main.06cc28fd.js"
+    "static/js/main.5e980880.js"
   ]
 }

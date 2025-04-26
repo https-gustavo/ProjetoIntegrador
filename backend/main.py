@@ -7,6 +7,13 @@ from passlib.context import CryptContext
 from typing import List
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Carrega o .env
+
+# Verifique se a variável de ambiente foi carregada corretamente
+print(os.getenv("DATABASE_URL"))
 
 from backend.schemas import (
     UsuarioCreate,

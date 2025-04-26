@@ -1,16 +1,11 @@
 # nixpacks.toml
 
 [phases.setup]
-# Definir pacotes necessários para o ambiente, por exemplo: python3 e gcc
 packages = ["python3", "gcc"]
 
-[phases.build]
-# Definir o comando de construção para instalar as dependências do projeto
-cmds = ["pip install -r backend/requirements.txt"]
+[python]
+# instrui o Nixpacks a criar o venv e instalar exatamente deste arquivo
+requirements = "backend/requirements.txt"
 
 [phases.start]
-# Comando para iniciar o servidor Uvicorn
 cmds = ["uvicorn backend.main:app --host=0.0.0.0 --port=$PORT"]
-
-# Comando extra que pode ser útil para depuração
-cmds_post_build = ["pip show python-jose"]

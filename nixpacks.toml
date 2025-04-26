@@ -3,9 +3,25 @@
 [phases.setup]
 packages = ["python3", "gcc"]
 
-[python]
-# instrui o Nixpacks a criar o venv e instalar exatamente deste arquivo
-requirements = "backend/requirements.txt"
+[phases.build]
+# 1) Cria o venv em /opt/venv
+# 2) Ativa o venv
+# 3) Confirma que estamos no venv
+# 4) Instala as deps do seu backend
+cmds = [
+  "python -m venv --copies /opt/venv",
+  ". /opt/venv/bin/activate",
+  "which python && which pip",
+  "pip install -r backend/requirements.txt",
+  "pip show python-jose"
+]
 
 [phases.start]
-cmds = ["uvicorn backend.main:app --host=0.0.0.0 --port=$PORT"]
+# 1) Ativa o mesmo venv
+# 2) Confirma que o uvicorn vem do venv
+# 3) Roda o backend
+cmds = [
+  ". /opt/venv/bin/activate",
+  "which uvicorn",
+  "uvicorn backend.main:app --host=0.0.0.0 --port=$PORT"
+]

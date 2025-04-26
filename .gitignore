@@ -3,3 +3,4 @@ build/
 dist/
 # Ignorar a virtualenv local
 backend/venv/
+.env

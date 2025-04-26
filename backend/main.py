@@ -8,7 +8,7 @@ from typing import List
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
-from schemas import (
+from backend.schemas import (
     UsuarioCreate,
     UsuarioLogin,
     UsuarioLoginResponse,

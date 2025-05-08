@@ -18,11 +18,11 @@ class Produto(Base):
     valor_imposto = Column(Float, nullable=False, default=0.0)
     valor_total_com_imposto = Column(Float, nullable=False, default=0.0)
     gastos_fixos = Column(Float, default=0.0)
-    codigo_barras = Column(String(13), unique=True, index=True)
+    # Permitir NULL para não violar unique em inserts iniciais
+    codigo_barras = Column(String(20), unique=True, index=True, nullable=True)
 
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario = relationship("Usuario", back_populates="produtos")
-
 
 class Usuario(Base):
     __tablename__ = "usuarios"

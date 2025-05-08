@@ -10,7 +10,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Criar Produto
 def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
-    # 1) Cálculo dos valores
+    # Cálculo dos valores
     if produto_data.quantidade_total > 0:
         valor_unitario = produto_data.valor_total / produto_data.quantidade_total
     else:
@@ -20,7 +20,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     valor_total_com_imposto = produto_data.valor_total + valor_imposto
     valor_venda_un = valor_unitario + (valor_unitario * (produto_data.margem_lucro / 100))
 
-    # 2) Criação inicial SEM código de barras (para pegar o ID)
+    # Criação inicial SEM código de barras
     produto = Produto(
         nome_produto=produto_data.nome_produto,
         quantidade_total=produto_data.quantidade_total,
@@ -32,19 +32,15 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras=None,            # NULL em vez de ""
+        codigo_barras=None,
         usuario_id=produto_data.usuario_id
     )
     db.add(produto)
+    db.flush()  # Obtém o ID gerado
 
-    # 3) Flush para obter produto.id sem commitar
-    db.flush()  
-    # Agora produto.id está preenchido
+    # Gerar o código de barras com base no ID
+    produto.codigo_barras = str(produto.id).zfill(8)  # Exemplo: '00000001'
 
-    # 4) Gerar o código de barras definitivo
-    produto.codigo_barras = str(produto.id).zfill(8)  # e.g. '00000001'
-
-    # 5) Commit final
     db.commit()
     db.refresh(produto)
     return produto

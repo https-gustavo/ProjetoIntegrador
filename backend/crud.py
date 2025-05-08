@@ -21,8 +21,8 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
 
     # Gerar código de barras sequencial se não for informado ou for None
     if not produto_data.codigo_barras or produto_data.codigo_barras == '':
-        ultimo_produto = db.query(Produto).order_by(Produto.codigo_barras.desc()).first()
-        novo_codigo_barras = (int(ultimo_produto.codigo_barras) + 1) if ultimo_produto and ultimo_produto.codigo_barras.isdigit() else 1
+        ultimo_produto = db.query(Produto).order_by(Produto.id.desc()).first()
+        novo_codigo_barras = str((int(ultimo_produto.codigo_barras) + 1) if ultimo_produto and ultimo_produto.codigo_barras.isdigit() else 1)
     else:
         novo_codigo_barras = produto_data.codigo_barras
 
@@ -37,7 +37,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras=str(novo_codigo_barras),
+        codigo_barras=novo_codigo_barras,
         usuario_id=produto_data.usuario_id
     )
 
@@ -45,6 +45,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     db.commit()
     db.refresh(produto)
     return produto
+
 
 
 

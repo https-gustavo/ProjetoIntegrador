@@ -326,8 +326,8 @@ function App() {
             {form.id ? 'Editar Produto' : 'Cadastrar Produto'}
           </h2>
           {[
-            { label: 'Nome do Produto', name: 'codigo_barras' },
             { label: 'Código de Barras', name: 'nome_produto' },
+            { label: 'Nome do Produto', name: 'codigo_barras' },
             { label: 'Quantidade Total', name: 'quantidade_total', type: 'number' },
             { label: 'Valor Total', name: 'valor_total', type: 'number' },
             { label: 'Alíquota de Imposto (%)', name: 'aliquota_imposto', type: 'number' },

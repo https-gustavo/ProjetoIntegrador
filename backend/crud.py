@@ -20,7 +20,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     valor_total_com_imposto = produto_data.valor_total + valor_imposto
     valor_venda_un = valor_unitario + (valor_unitario * (produto_data.margem_lucro / 100))
 
-    # 2) Cria o produto inicialmente SEM código de barras
+    # 2) Criação inicial SEM código de barras (para pegar o ID)
     produto = Produto(
         nome_produto=produto_data.nome_produto,
         quantidade_total=produto_data.quantidade_total,
@@ -32,18 +32,23 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras="",                # placeholder
+        codigo_barras=None,            # NULL em vez de ""
         usuario_id=produto_data.usuario_id
     )
     db.add(produto)
-    db.commit()
-    db.refresh(produto)
 
-    # 3) Usa o próprio ID para gerar o código de barras (sempre único!)
-    produto.codigo_barras = str(produto.id).zfill(8)  # zfill(8) gera, ex: '00000001'
+    # 3) Flush para obter produto.id sem commitar
+    db.flush()  
+    # Agora produto.id está preenchido
+
+    # 4) Gerar o código de barras definitivo
+    produto.codigo_barras = str(produto.id).zfill(8)  # e.g. '00000001'
+
+    # 5) Commit final
     db.commit()
     db.refresh(produto)
     return produto
+
 
 
 # Listar Produtos por Usuário

@@ -46,12 +46,6 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     return produto
 
 
-
-
-
-
-
-
 # Listar Produtos por Usuário
 def listar_produtos(db: Session, usuario_id: int):
     return db.query(Produto).filter(Produto.usuario_id == usuario_id).order_by(Produto.nome_produto.asc()).all()

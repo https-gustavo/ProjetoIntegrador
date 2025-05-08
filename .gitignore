@@ -4,3 +4,5 @@ dist/
 # Ignorar a virtualenv local
 backend/venv/
 .env
+__pycache__/
+*.pyc

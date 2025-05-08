@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 const API_URL = 'https://projetointegrador-production-d445.up.railway.app';
 
-
 function ListaProdutos({ produtos, onEditar, onNovoProduto, atualizarProdutos }) {
   const [termoBusca, setTermoBusca] = useState('');
 
@@ -36,10 +35,12 @@ function ListaProdutos({ produtos, onEditar, onNovoProduto, atualizarProdutos })
     return custoUnitario + imposto + gastosFixos + lucro;
   };
 
-  const produtosFiltrados = produtos.filter(p =>
-    (p.nome_produto || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
-    (p.codigo_barras || '').toLowerCase().includes(termoBusca.toLowerCase())
-  );
+  const produtosFiltrados = produtos
+    .filter(p =>
+      (p.nome_produto || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (p.codigo_barras || '').toLowerCase().includes(termoBusca.toLowerCase())
+    )
+    .sort((a, b) => a.nome_produto.localeCompare(b.nome_produto)); // Ordenação alfabética
 
   return (
     <div style={container}>

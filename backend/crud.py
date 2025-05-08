@@ -30,7 +30,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         else:
             novo_codigo_barras = '1'  # Se não houver código de barras, começar de 1
 
-        # Verificar se o novo código de barras gerado não está vazio
+        # Garantir que o novo código de barras nunca seja vazio
         if novo_codigo_barras == '':
             novo_codigo_barras = '1'
 
@@ -40,6 +40,11 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     else:
         novo_codigo_barras = produto_data.codigo_barras
 
+    # Garantir que o código de barras seja válido (não vazio e único)
+    if novo_codigo_barras == '' or db.query(Produto).filter(Produto.codigo_barras == novo_codigo_barras).first():
+        raise ValueError(f"O código de barras '{novo_codigo_barras}' já está em uso ou é inválido.")
+
+    # Criação do produto
     produto = Produto(
         nome_produto=produto_data.nome_produto,
         quantidade_total=produto_data.quantidade_total,
@@ -51,7 +56,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras=novo_codigo_barras,
+        codigo_barras=novo_codigo_barras,  # Garantindo que o código de barras seja válido
         usuario_id=produto_data.usuario_id
     )
 
@@ -59,6 +64,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     db.commit()
     db.refresh(produto)
     return produto
+
 
 
 

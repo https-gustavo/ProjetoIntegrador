@@ -23,18 +23,23 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     if not produto_data.codigo_barras or produto_data.codigo_barras == '':
         # Consultar o último código de barras numérico
         ultimo_produto = db.query(Produto).order_by(Produto.codigo_barras.desc()).first()
-        
-        # Verificar se existe um último produto e o código de barras é numérico
+
+        # Se o último produto tem um código de barras numérico
         if ultimo_produto and ultimo_produto.codigo_barras.isdigit():
             novo_codigo_barras = str(int(ultimo_produto.codigo_barras) + 1)
         else:
-            novo_codigo_barras = '1'  # Se não houver código de barras, começar de 1
+            # Se não houver código de barras, ou se não for numérico, começar de 1
+            novo_codigo_barras = '1'
 
         # Verificar se o novo código de barras já existe, e gerar outro se necessário
         while db.query(Produto).filter(Produto.codigo_barras == novo_codigo_barras).first():
             novo_codigo_barras = str(int(novo_codigo_barras) + 1)  # Incrementa o código de barras até encontrar um único
     else:
         novo_codigo_barras = produto_data.codigo_barras
+
+    # Verifica se o código de barras gerado possui 13 caracteres, caso contrário preenche com zeros à esquerda
+    if len(novo_codigo_barras) < 13:
+        novo_codigo_barras = novo_codigo_barras.zfill(13)  # Preenche com 0 à esquerda até 13 caracteres
 
     produto = Produto(
         nome_produto=produto_data.nome_produto,
@@ -51,9 +56,13 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         usuario_id=produto_data.usuario_id
     )
 
-    db.add(produto)
-    db.commit()
-    db.refresh(produto)
+    try:
+        db.add(produto)
+        db.commit()
+        db.refresh(produto)
+    except Exception as e:
+        db.rollback()  # Em caso de erro, realiza o rollback
+        raise e  # Levanta o erro novamente para tratar em outro lugar, se necessário
     return produto
 
 

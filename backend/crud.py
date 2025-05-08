@@ -10,6 +10,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Criar Produto
 def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
+    # 1) Cálculo dos valores
     if produto_data.quantidade_total > 0:
         valor_unitario = produto_data.valor_total / produto_data.quantidade_total
     else:
@@ -19,32 +20,7 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     valor_total_com_imposto = produto_data.valor_total + valor_imposto
     valor_venda_un = valor_unitario + (valor_unitario * (produto_data.margem_lucro / 100))
 
-    # Gerar código de barras sequencial se não for informado ou for None
-    if not produto_data.codigo_barras or produto_data.codigo_barras == '':
-        # Consultar o último código de barras numérico
-        ultimo_produto = db.query(Produto).order_by(Produto.codigo_barras.desc()).first()
-
-        # Verificar se existe um último produto e o código de barras é numérico
-        if ultimo_produto and ultimo_produto.codigo_barras.isdigit():
-            novo_codigo_barras = str(int(ultimo_produto.codigo_barras) + 1)
-        else:
-            novo_codigo_barras = '1'  # Se não houver código de barras, começar de 1
-
-        # Garantir que o novo código de barras nunca seja vazio
-        if novo_codigo_barras == '':
-            novo_codigo_barras = '1'
-
-        # Verificar se o novo código de barras já existe, e gerar outro se necessário
-        while db.query(Produto).filter(Produto.codigo_barras == novo_codigo_barras).first():
-            novo_codigo_barras = str(int(novo_codigo_barras) + 1)  # Incrementa o código de barras até encontrar um único
-    else:
-        novo_codigo_barras = produto_data.codigo_barras
-
-    # Garantir que o código de barras seja válido (não vazio e único)
-    if novo_codigo_barras == '' or db.query(Produto).filter(Produto.codigo_barras == novo_codigo_barras).first():
-        raise ValueError(f"O código de barras '{novo_codigo_barras}' já está em uso ou é inválido.")
-
-    # Criação do produto
+    # 2) Cria o produto inicialmente SEM código de barras
     produto = Produto(
         nome_produto=produto_data.nome_produto,
         quantidade_total=produto_data.quantidade_total,
@@ -56,14 +32,19 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras=novo_codigo_barras,  # Garantindo que o código de barras seja válido
+        codigo_barras="",                # placeholder
         usuario_id=produto_data.usuario_id
     )
-
     db.add(produto)
     db.commit()
     db.refresh(produto)
+
+    # 3) Usa o próprio ID para gerar o código de barras (sempre único!)
+    produto.codigo_barras = str(produto.id).zfill(8)  # zfill(8) gera, ex: '00000001'
+    db.commit()
+    db.refresh(produto)
     return produto
+
 
 
 

@@ -19,6 +19,13 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
     valor_total_com_imposto = produto_data.valor_total + valor_imposto
     valor_venda_un = valor_unitario + (valor_unitario * (produto_data.margem_lucro / 100))
 
+    # Gerar código de barras sequencial se não for informado
+    if not produto_data.codigo_barras:
+        ultimo_produto = db.query(Produto).order_by(Produto.codigo_barras.desc()).first()
+        novo_codigo_barras = (int(ultimo_produto.codigo_barras) + 1) if ultimo_produto else 1
+    else:
+        novo_codigo_barras = produto_data.codigo_barras
+
     produto = Produto(
         nome_produto=produto_data.nome_produto,
         quantidade_total=produto_data.quantidade_total,
@@ -30,10 +37,10 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
         valor_imposto=valor_imposto,
         valor_total_com_imposto=valor_total_com_imposto,
         gastos_fixos=produto_data.gastos_fixos,
-        codigo_barras=produto_data.codigo_barras,
-        usuario_id=produto_data.usuario_id  # agora vem direto do schema
+        codigo_barras=novo_codigo_barras,
+        usuario_id=produto_data.usuario_id
     )
-    
+
     db.add(produto)
     db.commit()
     db.refresh(produto)

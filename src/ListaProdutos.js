@@ -67,8 +67,8 @@ function ListaProdutos({ produtos, onEditar, onNovoProduto, atualizarProdutos })
         <thead>
           <tr style={cabecalho}>
             {[
-              'Código de Barras',
               'Nome',
+              'Código de Barras',
               'Qtd',
               'Valor Total',
               'Unitário',

@@ -29,6 +29,10 @@ def criar_produto(db: Session, produto_data: schemas.ProdutoCreate):
             novo_codigo_barras = str(int(ultimo_produto.codigo_barras) + 1)
         else:
             novo_codigo_barras = '1'  # Se não houver código de barras, começar de 1
+
+        # Verificar se o novo código de barras já existe, e gerar outro se necessário
+        while db.query(Produto).filter(Produto.codigo_barras == novo_codigo_barras).first():
+            novo_codigo_barras = str(int(novo_codigo_barras) + 1)  # Incrementa o código de barras até encontrar um único
     else:
         novo_codigo_barras = produto_data.codigo_barras
 
